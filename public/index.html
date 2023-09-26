@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Renamer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .btn {
+            border: 2px solid gray;
+            color: gray;
+            background-color: white;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <form class="container" id="uploadForm" enctype="multipart/form-data">
+        <h2>Upload your files</h2>
+        <label for="csv">CSV File:</label>
+        <input type="file" name="csv" required>
+        <br>
+        <label for="pdfs">PDF Files:</label>
+        <input type="file" name="pdfs" multiple required>
+        <br><br>
+        <div class="upload-btn-wrapper">
+            <button class="btn" type="submit">Upload and Rename</button>
+        </div>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.downloadLink) {
+                const link = document.createElement('a');
+                link.href = data.downloadLink;
+                link.innerText = 'Download Renamed PDFs';
+                link.download = 'renamed_pdfs.zip';
+                document.getElementById('result').appendChild(link);
+            } else {
+                document.getElementById('result').innerText = data.message;
+            }
+        });
+    </script>
+</body>
+</html>
