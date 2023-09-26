@@ -1,112 +1,141 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Renamer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
             margin: 0;
-            padding: 0;
-            background-color: #f5f7fa;
-            color: #333;
+            background: linear-gradient(45deg, #011738, #016368);
         }
-
-        .container {
-            width: 80%;
-            margin: 50px auto;
+        h2, p, ol {
+            color: white;
+            text-shadow: 2px 2px 4px #000;
+        }
+        form {
+            background-color: rgba(255, 255, 255, 0.8);
             padding: 30px;
-            background-color: #fff;
             border-radius: 10px;
-            box-shadow: 0px 0px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            width: 80%;
+            max-width: 550px;
+            margin-top: 20px;
+            position: relative;
         }
-
-        h1, h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .instructions {
-            background-color: #eaf2ff;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 500;
-        }
-
-        input[type="file"] {
+        input[type="file"], button {
+            margin-top: 20px;
             width: 100%;
             padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            margin-bottom: 20px;
-        }
-
-        .upload-btn-wrapper {
-            text-align: center;
-        }
-
-        .btn {
             border: none;
-            color: white;
-            background-color: #007bff;
-            padding: 10px 30px;
             border-radius: 5px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
         }
-
-        .btn:hover {
-            background-color: #0056b3;
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #message {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .fa-spinner {
+            animation: spin 1s infinite linear;
+        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>File Renamer</h1>
-        <div class="instructions">
-            <h2>Instructions</h2>
-            <ol>
-                <li>Upload a CSV file that contains the organization names you want to use for renaming. The CSV should have a column named "organization".</li>
-                <li>Upload the PDF files you want to rename.</li>
-                <li>Click the "Upload and Rename" button.</li>
-                <li>Once processed, you'll receive a link to download the renamed files in a ZIP format.</li>
-            </ol>
-        </div>
-        <form id="uploadForm" enctype="multipart/form-data">
-            <label for="csv">CSV File:</label>
-            <input type="file" name="csv" required>
-            <label for="pdfs">PDF Files:</label>
-            <input type="file" name="pdfs" multiple required>
-            <div class="upload-btn-wrapper">
-                <button class="btn" type="submit">Upload and Rename</button>
-            </div>
-        </form>
-        <div id="result"></div>
-    </div>
-    <script>
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData,
-            });
+    <h2>Welcome to File Renamer</h2>
+    <p>Effortlessly rename your PDFs using a CSV file. Just follow the steps below:</p>
+    <ol>
+        <li>Select a CSV file containing organization names.</li>
+        <li>Select multiple PDF files to rename.</li>
+        <li>Click the "Upload and Rename" button.</li>
+        <li>Download the renamed PDFs in a zip archive.</li>
+    </ol>
+    <form id="uploadForm">
+        <input type="file" id="csvInput" name="csv" accept=".csv" required>
+        <input type="file" id="pdfInput" name="pdfs" multiple accept=".pdf" required>
+        <button type="submit" id="uploadButton" disabled>Upload and Rename <i class="fas fa-upload"></i></button>
+    </form>
+    <div id="message"></div>
+    <div id="spinner"><i class="fas fa-spinner fa-2x"></i></div>
+    <p style="color: white; font-size: 0.9em; margin-top: 30px;">Note: Your files will be deleted from our server after 1 hour for security.</p>
 
-            const data = await response.json();
-            const resultDiv = document.getElementById('result');
-            if (data.message) {
-                resultDiv.innerHTML = `<p style="color: green; text-align: center;">${data.message}</p><a href="${data.downloadLink}" download style="display: block; text-align: center; margin-top: 10px;">Download ZIP</a>`;
-            } else {
-                resultDiv.innerHTML = `<p style="color: red; text-align: center;">Error occurred. Please try again.</p>`;
+    <script>
+        const form = document.getElementById('uploadForm');
+        const csvInput = document.getElementById('csvInput');
+        const pdfInput = document.getElementById('pdfInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const messageDiv = document.getElementById('message');
+        const spinner = document.getElementById('spinner');
+
+        // Validate files
+        function validateFiles() {
+            let csvValid = csvInput.files.length > 0 && csvInput.files[0].type === "text/csv";
+            let pdfsValid = pdfInput.files.length > 0 && [...pdfInput.files].every(file => file.type === "application/pdf");
+            uploadButton.disabled = !(csvValid && pdfsValid);
+        }
+
+        csvInput.addEventListener('change', validateFiles);
+        pdfInput.addEventListener('change', validateFiles);
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            spinner.style.display = "block";
+
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                spinner.style.display = "none";
+                if (response.ok) {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = data.downloadLink;
+                    downloadLink.download = 'renamed_pdfs.zip';
+                    downloadLink.click();
+                    csvInput.value = "";
+                    pdfInput.value = "";
+                    messageDiv.textContent = "Files processed successfully!";
+                    messageDiv.style.color = "green";
+                } else {
+                    messageDiv.textContent = data.message;
+                    messageDiv.style.color = "red";
+                }
+            } catch (error) {
+                spinner.style.display = "none";
+                messageDiv.textContent = 'An error occurred. Please try again.';
+                messageDiv.style.color = "red";
             }
         });
     </script>
